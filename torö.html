@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>TORÖ</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* 🌌 bakgrund + fullskärm */
+body {
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: white;
+}
+
+/* centrering fix */
+.container {
+  text-align: center;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: bold;
+  margin-bottom: 18px;
+  letter-spacing: 2px;
+}
+
+/* box */
+.box {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  padding: 40px;
+  border-radius: 22px;
+
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  min-width: 300px;
+
+  animation: pulse 6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* vind */
+.value {
+  font-size: 76px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* text */
+.small {
+  color: rgba(255,255,255,0.7);
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+/* pil */
+.arrow-wrap {
+  width: 85px;
+  height: 85px;
+  margin-top: 18px;
+  display: inline-block;
+}
+
+.arrow {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  margin: 18px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="title">TORÖ</div>
+
+  <div class="box">
+
+    <div id="wind" class="value">--</div>
+    <div class="small">m/s</div>
+
+    <hr>
+
+    <div class="small">
+      Byvind: <span id="gust">--</span> m/s
+    </div>
+
+    <div class="arrow-wrap">
+      <svg id="arrow" class="arrow" viewBox="0 0 100 100">
+        <line x1="50" y1="90" x2="50" y2="20"
+              stroke="white" stroke-width="6" stroke-linecap="round"/>
+        <polygon points="50,5 40,25 60,25" fill="white"/>
+      </svg>
+    </div>
+
+    <div id="dir" class="small">--</div>
+
+  </div>
+</div>
+
+<script>
+
+const station = 87440;
+
+const windURL =
+"https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/4/station/" +
+station + "/period/latest-hour/data.json";
+
+const dirURL =
+"https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/3/station/" +
+station + "/period/latest-hour/data.json";
+
+const gustURL =
+"https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/21/station/" +
+station + "/period/latest-hour/data.json";
+
+function getLatest(url) {
+  return fetch(url)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.value || d.value.length === 0) return null;
+      return Number(d.value[d.value.length - 1].value);
+    })
+    .catch(() => null);
+}
+
+async function update() {
+
+  const [wind, dir, gust] = await Promise.all([
+    getLatest(windURL),
+    getLatest(dirURL),
+    getLatest(gustURL)
+  ]);
+
+  document.getElementById("wind").innerText =
+    wind !== null ? wind.toFixed(1) : "--";
+
+  document.getElementById("gust").innerText =
+    gust !== null ? gust.toFixed(1) : "--";
+
+  if (dir !== null) {
+    document.getElementById("dir").innerText = dir + "°";
+
+    document.getElementById("arrow").style.transform =
+      `rotate(${dir + 180}deg)`;
+  } else {
+    document.getElementById("dir").innerText = "--";
+  }
+}
+
+update();
+setInterval(update, 60000);
+
+</script>
+
+</body>
+</html>
